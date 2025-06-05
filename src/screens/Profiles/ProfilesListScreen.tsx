@@ -13,11 +13,13 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { DUMMY_API_KEY } from '../../constants/api';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, AppDispatch } from '../../redux/store';
 import { logout } from '../../redux/slices/userSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ProfileCard from '../../components/ProfileCard';
 import { LIMIT, USER_TOKEN_KEY } from '../../constants/storageKeys';
+import { fetchProfiles } from '../../redux/slices/profilesSlice';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ProfilesList'>;
 
@@ -30,12 +32,13 @@ interface User {
 }
 
 export default function ProfilesListScreen({ navigation }: Props) {
-    const [users, setUsers] = useState<User[]>([]); // List of loaded users
-    const [page, setPage] = useState(0);           // Current page number for pagination
-    const [loading, setLoading] = useState(false); // Loading indicator for API requests
-    const [total, setTotal] = useState(0);         // Total number of users available
+    // const [users, setUsers] = useState<User[]>([]); // List of loaded users
+    // const [page, setPage] = useState(0);           // Current page number for pagination
+    // const [loading, setLoading] = useState(false); // Loading indicator for API requests
+    // const [total, setTotal] = useState(0);         // Total number of users available
 
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
+    const { users, loading, page, hasMore } = useSelector((state: RootState) => state.profiles);
 
     // Logout confirmation & handler
     const logoutHandler = useCallback(() => {
@@ -70,43 +73,6 @@ export default function ProfilesListScreen({ navigation }: Props) {
         });
     }, [navigation, logoutHandler]);
 
-    // Fetch users from API whenever page changes
-    useEffect(() => {
-        const fetchUsers = async () => {
-            if (loading) return;               // Prevent duplicate calls
-            if (total !== 0 && users.length >= total) return; // No more users to load
-
-            setLoading(true);
-
-            try {
-                const response = await fetch(
-                    `https://dummyapi.io/data/v1/user?limit=${LIMIT}&page=${page}`,
-                    {
-                        headers: { 'app-id': DUMMY_API_KEY },
-                    }
-                );
-                const data = await response.json();
-
-                // Filter out any duplicate users that are already loaded
-                const newUsers = data.data.filter(
-                    (newUser: User) => !users.some(user => user.id === newUser.id)
-                );
-
-                // Append new users to existing list
-                setUsers(prev => [...prev, ...newUsers]);
-
-                // Update total users count from API response
-                setTotal(data.total);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchUsers();
-    }, [page]);
-
     // Navigate to ProfileDetail screen when user taps a profile
     const handlePress = useCallback(
         (id: string) => {
@@ -114,6 +80,13 @@ export default function ProfilesListScreen({ navigation }: Props) {
         },
         [navigation]
     );
+
+    useEffect(() => {
+        if (hasMore && !loading) {
+            dispatch(fetchProfiles(page));
+        }
+    }, [dispatch, hasMore, loading, page]);
+
 
     // Render each profile card
     const renderItem = useCallback(
@@ -128,11 +101,11 @@ export default function ProfilesListScreen({ navigation }: Props) {
     );
 
     // Load next page when list end is reached
-    const loadMore = useCallback(() => {
-        if (!loading && users.length < total) {
-            setPage(prev => prev + 1);
+    const loadMore = () => {
+        if (!loading && hasMore) {
+            dispatch(fetchProfiles(page));
         }
-    }, [loading, users.length, total]);
+    };
 
     // Optimize FlatList performance by pre-calculating item layout
     const getItemLayout = useCallback(
