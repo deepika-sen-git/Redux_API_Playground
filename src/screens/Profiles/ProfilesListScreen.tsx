@@ -1,6 +1,6 @@
 // ProfilesListScreen: Displays a paginated list of user profiles with logout option and navigation to details
 
-import React, { useEffect, useLayoutEffect, useState, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -12,13 +12,12 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
-import { DUMMY_API_KEY } from '../../constants/api';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../redux/store';
 import { logout } from '../../redux/slices/userSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ProfileCard from '../../components/ProfileCard';
-import { LIMIT, USER_TOKEN_KEY } from '../../constants/storageKeys';
+import { USER_TOKEN_KEY } from '../../constants/storageKeys';
 import { fetchProfiles } from '../../redux/slices/profilesSlice';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ProfilesList'>;
@@ -39,6 +38,7 @@ export default function ProfilesListScreen({ navigation }: Props) {
 
     const dispatch = useDispatch<AppDispatch>();
     const { users, loading, page, hasMore } = useSelector((state: RootState) => state.profiles);
+
 
     // Logout confirmation & handler
     const logoutHandler = useCallback(() => {
@@ -109,9 +109,9 @@ export default function ProfilesListScreen({ navigation }: Props) {
 
     // Optimize FlatList performance by pre-calculating item layout
     const getItemLayout = useCallback(
-        (_data: User[] | null | undefined, index: number) => ({
+        (data: ArrayLike<User> | null | undefined, index: number) => ({
             length: 220,       // Height of each item
-            offset: 180 * index, // Offset from top
+            offset: 220 * index, // Offset from top
             index,
         }),
         []
@@ -137,7 +137,7 @@ export default function ProfilesListScreen({ navigation }: Props) {
                 keyExtractor={item => item.id}
                 renderItem={renderItem}
                 numColumns={2}
-                contentContainerStyle={{ paddingBottom: 40, backgroundColor: '#e74c3c' }}
+                contentContainerStyle={{ paddingBottom: 40, backgroundColor: '#ff8a65' }}
                 onEndReached={loadMore}
                 onEndReachedThreshold={0.5}
                 ListFooterComponent={renderFooter}

@@ -4,11 +4,9 @@ import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Text, Alert, ActivityIndicator } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useDispatch, useSelector } from 'react-redux';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from '../../navigation/AppNavigator';
-import { login } from '../../redux/slices/userSlice';
 import { RootState } from '../../redux/store';
-import { USER_EMAIL_KEY, USER_TOKEN_KEY } from '../../constants/storageKeys';
+import { loginUser } from '../../redux/thunks/loginUser';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
@@ -29,58 +27,88 @@ export default function SignInScreen({ navigation }: Props) {
         return re.test(email);
     };
 
-    // Handler to perform sign-in
-    const handleSignIn = async () => {
-        // Validate email format
+    // // Handler to perform sign-in
+    // const handleSignIn = async () => {
+    //     // Validate email format
+    //     if (!validateEmail(email)) {
+    //         Alert.alert('Invalid Email', 'Please enter a valid email address.');
+    //         return;
+    //     }
+
+    //     // Password length validation
+    //     if (password.length < 6) {
+    //         Alert.alert('Invalid Password', 'Password must be at least 6 characters long.');
+    //         return;
+    //     }
+
+    //     setLoading(true);
+
+    //     try {
+    //         // Send POST request to API with email and password
+    //         const response = await fetch('https://reqres.in/api/login', {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //                 'x-api-key': 'reqres-free-v1',
+    //             },
+    //             body: JSON.stringify({ email, password }),
+    //         });
+
+    //         const data = await response.json();
+    //         setLoading(false);
+
+    //         if (response.ok && data.token) {
+    //             // Save token & email in AsyncStorage for persistence
+    //             await AsyncStorage.setItem(USER_TOKEN_KEY, data.token);
+    //             await AsyncStorage.setItem(USER_EMAIL_KEY, email);
+
+    //             // Update Redux store with login info
+    //             dispatch(login({ token: data.token, email }));
+
+    //             // Navigate to ProfilesList screen after successful login
+    //             if (isLoggedIn) {
+    //                 navigation.navigate('ProfilesList');
+    //             }
+    //         } else {
+    //             // Show error if login failed
+    //             Alert.alert('Login Failed', data.error || 'Unknown error occurred');
+    //         }
+    //     }
+    //     catch (error) {
+    //         setLoading(false);
+    //         Alert.alert('Network Error', 'Please try again later.');
+    //     }
+    // };
+
+
+    const handleSignIn = async (): Promise<void> => {
         if (!validateEmail(email)) {
             Alert.alert('Invalid Email', 'Please enter a valid email address.');
             return;
         }
 
-        // Password length validation
         if (password.length < 6) {
             Alert.alert('Invalid Password', 'Password must be at least 6 characters long.');
             return;
         }
 
         setLoading(true);
-
         try {
-            // Send POST request to API with email and password
-            const response = await fetch('https://reqres.in/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': 'reqres-free-v1',
-                },
-                body: JSON.stringify({ email, password }),
-            });
+            const resultAction = await dispatch(loginUser({ email, password }) as any);
 
-            const data = await response.json();
             setLoading(false);
 
-            if (response.ok && data.token) {
-                // Save token & email in AsyncStorage for persistence
-                await AsyncStorage.setItem(USER_TOKEN_KEY, data.token);
-                await AsyncStorage.setItem(USER_EMAIL_KEY, email);
-
-                // Update Redux store with login info
-                dispatch(login({ token: data.token, email }));
-
-                // Navigate to ProfilesList screen after successful login
-                if (isLoggedIn) {
-                    navigation.navigate('ProfilesList');
-                }
+            if (loginUser.fulfilled.match(resultAction)) {
+                navigation.replace('ProfilesList');
             } else {
-                // Show error if login failed
-                Alert.alert('Login Failed', data.error || 'Unknown error occurred');
+                Alert.alert('Login Failed', resultAction.payload);
             }
-        }
-        catch (error) {
+        } catch (error) {
             setLoading(false);
-            Alert.alert('Network Error', 'Please try again later.');
+            Alert.alert('Error', 'Unexpected error occurred.');
         }
     };
+
 
     // Show loading indicator while login request is in progress
     if (loading) {

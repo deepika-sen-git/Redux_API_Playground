@@ -1,4 +1,4 @@
-// src/store/profileDetailSlice.ts
+// src/redux/slices/profileDetailSlice.ts
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 interface Location {

@@ -67,7 +67,7 @@ export default function ProfileDetailScreen({ route }: Props) {
 
 const styles = StyleSheet.create({
     loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    container: { alignItems: 'center', padding: 20, backgroundColor: '#f0ffff' },
+    container: { alignItems: 'center', padding: 20, backgroundColor: '#fff176' },
     image: { width: 150, height: 150, borderRadius: 10, marginBottom: 20 },
     name: { fontSize: 22, fontWeight: 'bold', marginBottom: 10 },
     info: { fontSize: 16, marginBottom: 5 },
